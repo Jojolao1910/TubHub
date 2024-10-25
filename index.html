@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TubHub - Baixe vídeos do YouTube</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#3b82f6",
+                foreground: "#ffffff",
+              },
+              secondary: {
+                DEFAULT: "#f3f4f6",
+                foreground: "#1f2937",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      function TubHub() {
+        const [theme, setTheme] = React.useState(() => {
+          return localStorage.getItem("theme") || "light";
+        });
+        const [videoUrl, setVideoUrl] = React.useState("");
+        const [format, setFormat] = React.useState("mp4");
+        const [resolution, setResolution] = React.useState("720p");
+        const [isLoading, setIsLoading] = React.useState(false);
+        const [downloadLink, setDownloadLink] = React.useState("");
+
+        React.useEffect(() => {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+          localStorage.setItem("theme", theme);
+        }, [theme]);
+
+        const toggleTheme = () => {
+          setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+        };
+
+        const handleDownload = async () => {
+          setIsLoading(true);
+          setDownloadLink("");
+
+          try {
+            const response = await fetch("http://localhost:5000/api/download", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                url: videoUrl,
+                format: format,
+                resolution: resolution,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              setDownloadLink(
+                `http://localhost:5000/api/download/${data.filename}`
+              );
+            } else {
+              alert("Erro ao processar o vídeo. Por favor, tente novamente.");
+            }
+          } catch (error) {
+            alert("Ocorreu um erro. Por favor, tente novamente mais tarde.");
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        return (
+          <div
+            className={`min-h-screen bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 ${theme}`}
+          >
+            <header className="py-6 bg-white dark:bg-gray-800 shadow-md">
+              <div className="container mx-auto px-4 flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-primary flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8 mr-2"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                      <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                    </svg>
+                    TubHub
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-300 mt-2 text-sm md:text-base">
+                    Baixe vídeos do YouTube com facilidade
+                  </p>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                >
+                  {theme === "dark" ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-grow container mx-auto px-4 py-8">
+              <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+                <div className="p-6">
+                  <h2 className="text-xl md:text-2xl font-semibold mb-2 text-gray-800 dark:text-white">
+                    Baixar Vídeo do YouTube
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    Cole o link do vídeo do YouTube abaixo, escolha as opções e
+                    clique em Baixar
+                  </p>
+                  <div className="space-y-4">
+                    <input
+                      type="url"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    />
+                    <div className="flex space-x-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Formato
+                        </label>
+                        <select
+                          value={format}
+                          onChange={(e) => setFormat(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                        >
+                          <option value="mp4">MP4</option>
+                          <option value="mp3">MP3</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Resolução
+                        </label>
+                        <select
+                          value={resolution}
+                          onChange={(e) => setResolution(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                          disabled={format === "mp3"}
+                        >
+                          <option value="360p">360p</option>
+                          <option value="480p">480p</option>
+                          <option value="720p">720p</option>
+                          <option value="1080p">1080p</option>
+                        </select>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleDownload}
+                      disabled={!videoUrl || isLoading}
+                      className="w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Processando...
+                        </span>
+                      ) : (
+                        <>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 inline-block mr-2"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Baixar
+                        </>
+                      )}
+                    </button>
+                    {downloadLink && (
+                      <div className="mt-4">
+                        <a
+                          href={downloadLink}
+                          className="block w-full text-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Clique aqui para baixar
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <section className="mt-12 text-center">
+                <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+                  Como usar
+                </h2>
+                <ol className="list-decimal list-inside space-y-2 text-sm md:text-base inline-block text-left text-gray-700 dark:text-gray-300">
+                  <li>Cole o link do vídeo do YouTube no campo acima</li>
+                  <li>Escolha o formato (MP3 ou MP4) e a resolução desejada</li>
+                  <li>Clique no botão "Baixar"</li>
+                  <li>Aguarde o processamento do vídeo</li>
+                  <li>Clique no link de download quando estiver pronto</li>
+                </ol>
+              </section>
+            </main>
+
+            <footer className="bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 py-6 mt-8">
+              <div className="container mx-auto px-4">
+                <p className="text-center text-sm md:text-base">
+                  © 2024 TubHub. Todos os direitos reservados. Use com
+                  responsabilidade e respeite os direitos autorais.
+                </p>
+              </div>
+            </footer>
+          </div>
+        );
+      }
+
+      ReactDOM.render(<TubHub />, document.getElementById("root"));
+    </script>
+  </body>
+</html>
